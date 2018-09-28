@@ -2,10 +2,6 @@
 
 Emits statistics of https://github.com/AdamBien/porcupine/[Porcupine^] pipelines via MicroProfile metrics.
 
-// == Motivation
-
-// Please see
-
 == Usage
 
 Add the following dependency to your project build.
@@ -21,6 +17,28 @@ It depends on Porcupine `0.0.4`, CDI `1.1`, and MicroProfile Metrics `1.0`.
 ----
 
 Inject the bean `PorcupineMetrics` and invoke the `updateMetrics` method as often as you want the metrics to be updated.
-Due to Porcupine's statistics internals, the update mechanism currently requires to be triggered explicitly, e.g. via timer.
+Due to Porcupine's statistics internals, the update mechanism currently requires to be triggered explicitly, e.g. via timer:
 
-// For more information see
+[source,java]
+----
+@Singleton
+@Startup
+@ConcurrencyManagement(ConcurrencyManagementType.BEAN)
+public class ExecutorStatisticsUpdater {
+
+    @Inject
+    PorcupineMetrics porcupineMetrics;
+
+    @Resource
+    ManagedScheduledExecutorService scheduler;
+
+    @PostConstruct
+    public void init() {
+        scheduler.scheduleAtFixedRate(porcupineMetrics::updateMetrics,
+            0, 5, TimeUnit.SECONDS);
+    }
+
+}
+----
+
+For more information see https://blog.sebastian-daschner.com/entries/porcupine-metrics-grafana[Instrumenting Porcupine With Prometheus & Grafana^].
